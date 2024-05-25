@@ -1,7 +1,6 @@
+import { Request } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 /**
  * Represents an error handler class for logging errors and debugging information.
  */
@@ -11,30 +10,30 @@ class ErrorHandler {
      * @private
      * @type {string}
      */
-    #logsDirectory;
+    private logsDirectory: string;
 
     /**
      * The absolute path to the error log file.
      * @private
      * @type {string}
      */
-    #errorLogPath;
+    private errorLogPath: string;
 
     /**
      * The absolute path to the debug log file.
      * @private
      * @type {string}
      */
-    #debugLogPath;
+    private debugLogPath: string;
 
     /**
      * Creates an instance of the ErrorHandler class.
      */
     constructor() {
-        const __dirname = path.dirname(fileURLToPath(import.meta.url));
-        this.#logsDirectory = path.join(__dirname, '../logs');
-        this.#errorLogPath = path.join(this.#logsDirectory, 'error.log');
-        this.#debugLogPath = path.join(this.#logsDirectory, 'debug.log');
+        // const __dirname = path.dirname(fileURLToPath(__filename));
+        this.logsDirectory = path.join(__dirname, '../logs');
+        this.errorLogPath = path.join(this.logsDirectory, 'error.log');
+        this.debugLogPath = path.join(this.logsDirectory, 'debug.log');
 
         // Determine log file paths and validate their existence
         this.validateExistence();
@@ -44,14 +43,14 @@ class ErrorHandler {
      * Validates the existence of log files and creates them if they don't exist.
      * @private
      */
-    validateExistence() {
+    private validateExistence(): void {
         try {
-            if (!fs.existsSync(this.#errorLogPath)) {
-                fs.writeFileSync(this.#errorLogPath, '', { flag: 'w' });
+            if (!fs.existsSync(this.errorLogPath)) {
+                fs.writeFileSync(this.errorLogPath, '', { flag: 'w' });
             }
 
-            if (!fs.existsSync(this.#debugLogPath)) {
-                fs.writeFileSync(this.#debugLogPath, '', { flag: 'w' });
+            if (!fs.existsSync(this.debugLogPath)) {
+                fs.writeFileSync(this.debugLogPath, '', { flag: 'w' });
             }
         } catch (error) {
             console.error(error);
@@ -63,13 +62,11 @@ class ErrorHandler {
      * @param {Error} error - The error object to log.
      * @param {Request|null} [req=null] - The optional request object containing request details.
      */
-    logToError(error, req = null) {
+    public logToError(error: Error, req: Request | null = null): void {
         try {
-            const errorLogStream = fs.createWriteStream(this.#errorLogPath, { flags: 'a' });
+            const errorLogStream = fs.createWriteStream(this.errorLogPath, { flags: 'a' });
 
-            if (errorLogStream.writable && (req !== null && req !== undefined)) {
-                errorLogStream.write(`[${new Date().toISOString()}] ${error.stack}\n`);
-
+            if (errorLogStream.writable && req) {
                 const { method, url, headers, params, query, body } = req;
 
                 errorLogStream.write(`[${new Date().toISOString()}] ${error.stack}\n`);
@@ -80,13 +77,13 @@ class ErrorHandler {
                 errorLogStream.write(`Request Query: ${JSON.stringify(query)}\n`);
                 errorLogStream.write(`Request Body: ${JSON.stringify(body)}\n`);
                 errorLogStream.write(`============================================\n`);
-            } else if (errorLogStream.writable && (req === null || req === undefined)) {
+            } else if (errorLogStream.writable) {
                 errorLogStream.write(`[${new Date().toISOString()}] ${error.stack}\n`);
             } else {
-                throw new Error('This stream is not writeable');
+                throw new Error('This stream is not writable');
             }
         } catch (error) {
-            console.error(error)
+            console.error(error);
         }
     }
 
@@ -94,16 +91,16 @@ class ErrorHandler {
      * Logs debug information to the debug log file.
      * @param {any} data - The debug information to log.
      */
-    logToDebug(data) {
+    public logToDebug(data: any): void {
         try {
-            const debugLogStream = fs.createWriteStream(this.#debugLogPath, { flags: 'a' });
+            const debugLogStream = fs.createWriteStream(this.debugLogPath, { flags: 'a' });
             if (debugLogStream.writable) {
                 debugLogStream.write(`[${new Date().toISOString()}] ${data}\n`);
             } else {
-                throw new Error('This stream is not writeable');
+                throw new Error('This stream is not writable');
             }
         } catch (error) {
-            console.error(error)
+            console.error(error);
         }
     }
 }

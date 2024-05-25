@@ -1,21 +1,18 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import session from 'express-session';
-import { fileURLToPath } from 'url';
 
 import fs from 'fs';
 import path from 'path';
 import { config } from "dotenv";
-import ErrorHandler from './classes/errorHandler.js';
+import ErrorHandler from './classes/errorHandler.class';
 
 const errorHandler = new ErrorHandler();
 
 config();
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs/debug.log'), { flags: 'a' });
 
@@ -34,11 +31,13 @@ app.use(session({
     saveUninitialized: false
 }));
 
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
     try {
         return res.status(200).json({ message: 'works' });
     } catch (error) {
-        errorHandler.logToError(error, req)
+        if (error instanceof Error) {
+            errorHandler.logToError(error, req);
+        }
         res.status(500).json('Internal server error');
     }
 });
