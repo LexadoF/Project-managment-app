@@ -9,12 +9,14 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';
 import { config } from "dotenv";
+import ErrorHandler from './classes/errorHandler.js';
+
+const errorHandler = new ErrorHandler();
 
 config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const accessErrorLogStream = fs.createWriteStream(path.join(__dirname, 'logs/error.log'), { flags: 'a' });
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs/debug.log'), { flags: 'a' });
 
 const app = express();
@@ -36,18 +38,7 @@ app.get('/', (req, res) => {
     try {
         return res.status(200).json({ message: 'works' });
     } catch (error) {
-        accessErrorLogStream.write(`============================================\n`);
-        accessErrorLogStream.write(`[${new Date().toISOString()}] ${error.stack}\n`);
-
-        const { method, url, headers, params, query, body } = req;
-
-        accessErrorLogStream.write(`Request Method: ${method}\n`);
-        accessErrorLogStream.write(`Request URL: ${url}\n`);
-        accessErrorLogStream.write(`Request Headers: ${JSON.stringify(headers)}\n`);
-        accessErrorLogStream.write(`Request Params: ${JSON.stringify(params)}\n`);
-        accessErrorLogStream.write(`Request Query: ${JSON.stringify(query)}\n`);
-        accessErrorLogStream.write(`Request Body: ${JSON.stringify(body)}\n`);
-        accessErrorLogStream.write(`============================================\n`);
+        errorHandler.logToError(error, req)
         res.status(500).json('Internal server error');
     }
 });
